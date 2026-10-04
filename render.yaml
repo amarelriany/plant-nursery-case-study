@@ -1,0 +1,18 @@
+services:
+  - type: web
+    name: storefront-planter-prospector
+    env: docker
+    plan: starter
+    disk:
+      name: app-storage
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: BFL_API_KEY
+        sync: false

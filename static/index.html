@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Storefront Planter Visualisation</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+
+<body>
+
+  <!-- ─── CONTROL HEADER ────────────────────────────────────────────── -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand">
+        <span class="logo-text">Storefront AI</span>
+        <span class="badge">Prospecting Agent</span>
+      </div>
+      <div id="agent-status-panel" class="agent-status-panel">
+        <span id="status-badge" class="status-badge idle">Idle</span>
+        <span id="queue-badge" class="queue-badge">Queue: 0 remaining</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- ─── CONFIGURATION & ACTIONS ───────────────────────────────────── -->
+  <section class="config-section" aria-label="Agent Configuration">
+    <div class="inputs-grid">
+      <div class="input-group">
+        <label for="input-coverage">Coverage Area (Google Maps)</label>
+        <input id="input-coverage" type="text" placeholder="e.g. Shoreditch, London" value="Shoreditch, London" />
+      </div>
+
+      <div class="input-group">
+        <label for="input-types">Business Type</label>
+        <select id="input-types" class="form-select">
+          <option value="cafe">Cafe</option>
+          <option value="beauty_salon">Beauty Salon</option>
+          <option value="restaurant">Restaurant</option>
+          <option value="bar">Bar</option>
+          <option value="gym">Gym</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <label for="input-target">Target Businesses / Day</label>
+        <input id="input-target" type="number" min="1" max="100" value="3" />
+      </div>
+    </div>
+
+    <div class="config-actions">
+      <button id="btn-start" class="btn-primary btn-start-green" aria-label="Start Agent">
+        ▶ Start Agent
+      </button>
+      <button id="btn-pause" class="btn-secondary" aria-label="Pause Agent" disabled>
+        Pause Agent
+      </button>
+    </div>
+  </section>
+
+  <!-- ─── PIPELINE STATUS ───────────────────────────────────────────── -->
+  <section class="pipeline-section" id="pipeline-section" aria-live="polite" aria-label="Pipeline progress">
+    <div class="pipeline-steps" id="pipeline-steps">
+      <div class="step" id="step-discover" data-state="idle">
+        <div class="step-dot"></div>
+        <div class="step-body">
+          <span class="step-title">Discover</span>
+          <span class="step-detail">Storefront Found</span>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" id="step-capture" data-state="idle">
+        <div class="step-dot"></div>
+        <div class="step-body">
+          <span class="step-title">Capture</span>
+          <span class="step-detail">Quality Check</span>
+        </div>
+      </div>
+      <div class="step-connector"></div>
+      <div class="step" id="step-composite" data-state="idle">
+        <div class="step-dot"></div>
+        <div class="step-body">
+          <span class="step-title">Composite</span>
+          <span class="step-detail">QA check</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── MAIN CONTENT LAYOUT ──────────────────────────────────────── -->
+  <div class="app-container">
+    <!-- Sidebar: Visited Prospects List -->
+    <aside class="sidebar-panel">
+      <h2>Visited Prospects (<span id="results-count">0</span>)</h2>
+      <div class="list-wrapper">
+        <ul id="results-list" class="results-history-list"></ul>
+      </div>
+    </aside>
+
+    <!-- Main Viewer Panel -->
+    <main id="main-viewer" class="main-viewer" aria-label="Visualisation results">
+      <div id="active-result-container" class="active-result-container">
+        <div class="empty-state">
+
+          <h3>No storefront selected</h3>
+          <p>Configure the agent above and click Start. Visited prospects will appear in the list on the left.</p>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ─── REJECTED LIST ─────────────────────────────────────────────── -->
+  <section id="rejected-section" class="rejected-section" aria-label="Excluded venues">
+    <div class="section-inner">
+      <details id="rejected-details">
+        <summary>Excluded Candidates (<span id="rejected-count">0</span>)</summary>
+        <ul id="rejected-list" class="rejected-list"></ul>
+      </details>
+    </div>
+  </section>
+
+  <!-- ─── RESULT CARD TEMPLATE ─────────────────────────────────────── -->
+  <template id="venue-card-template">
+    <article class="venue-card" aria-label="Venue result">
+      <header class="venue-card-header">
+        <div class="venue-meta">
+          <h2 class="venue-name"></h2>
+          <p class="venue-address"></p>
+        </div>
+        <div class="venue-scores">
+          <div class="score-badge" id="score-capture">
+            <span class="score-label">Capture</span>
+            <span class="score-value">—</span>
+          </div>
+          <div class="score-badge" id="score-composite">
+            <span class="score-label">Realism</span>
+            <span class="score-value">—</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Before/after slider -->
+      <div class="comparison-wrapper">
+        <div class="comparison-container">
+          <div class="img-layer img-after">
+            <img class="after-img" alt="Visualisation" />
+          </div>
+          <div class="img-layer img-before">
+            <img class="before-img" alt="Original frontage" />
+          </div>
+          <div class="comparison-divider"></div>
+          <input type="range" class="comparison-slider" min="0" max="100" value="50"
+            aria-label="Compare before and after" />
+          <div class="comparison-labels">
+            <span class="label-before">Before</span>
+            <span class="label-after">After</span>
+          </div>
+        </div>
+      </div>
+
+      <footer class="venue-card-footer">
+        <span class="source-tag"></span>
+        <span class="quality-note"></span>
+      </footer>
+    </article>
+  </template>
+
+  <!-- ─── ERROR TOAST ───────────────────────────────────────────────── -->
+  <div id="error-toast" class="error-toast" role="alert" aria-live="assertive"></div>
+
+  <script src="/js/app.js"></script>
+</body>
+
+</html>
